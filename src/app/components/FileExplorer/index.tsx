@@ -7,6 +7,7 @@ import Sidebar from './Sidebar';
 import Toolbar from './Toolbar';
 import FileList from './FileList';
 import HoverCard from './HoverCard';
+import SearchModal from './SearchModal';
 
 export default function FileExplorer() {
   const [files, setFiles] = useState<FileItem[]>([]);
@@ -14,6 +15,7 @@ export default function FileExplorer() {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [hoveredFile, setHoveredFile] = useState<HoveredFile | null>(null);
   const [selectedFolder, setSelectedFolder] = useState<string>(SIDEBAR_ITEMS[0].id);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   // Debug useEffect to track state changes
   useEffect(() => {
@@ -21,6 +23,19 @@ export default function FileExplorer() {
     console.log('All files:', files);
     console.log('Files in current folder:', files.filter(f => f.folder === selectedFolder));
   }, [selectedFolder, files]);
+
+  // Add keyboard shortcut listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsSearchOpen(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -82,6 +97,14 @@ export default function FileExplorer() {
     setSelectedFolder(folderId);
   };
 
+  const handleFileSelect = (file: FileItem) => {
+    // If it's a folder, navigate to it
+    if (file.type === 'folder') {
+      setSelectedFolder(file.name);
+    }
+    // For files, you could add a preview or other action here
+  };
+
   // Filter files for the current folder
   const currentFolderFiles = files.filter(file => file.folder === selectedFolder);
 
@@ -110,6 +133,12 @@ export default function FileExplorer() {
           {hoveredFile && <HoverCard hoveredFile={hoveredFile} />}
         </div>
       </div>
+      <SearchModal
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        files={files}
+        onFileSelect={handleFileSelect}
+      />
     </div>
   );
 } 
